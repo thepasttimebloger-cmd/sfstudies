@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SF STUDIES</title>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { 
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            bgDark: '#050505',
+            glass: 'rgba(255, 255, 255, 0.02)',
+            glassHover: 'rgba(255, 255, 255, 0.06)',
+            borderLight: 'rgba(255, 255, 255, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Complete Scrollbar Removal */
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+
+    body {
+      background-color: #050505;
+      color: #ffffff;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center center;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100vw; height: 500px;
+      background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .glass-panel {
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--borderLight);
+      box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .floating-icon { animation: float 5s ease-in-out infinite; }
+  </style>
+</head>
+<body class="no-scrollbar">
+
+  <div class="ambient-glow"></div>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // =========================================================================
+    // ⏳ TIMER SETTING
+    // 5000 = 5 seconds (Testing) | 1800000 = 30 minutes (Production)
+    // =========================================================================
+    const AUTO_WATCH_MS = 1800000; 
+
+    // --- Live Time & Date Engine ---
+    const DateTimeDisplay = () => {
+      const [date, setDate] = useState(new Date());
+
+      useEffect(() => {
+        const timer = setInterval(() => setDate(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      const timeOptions = { hour: '2-digit', minute: '2-digit' };
+      const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+
+      return (
+        <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-full border border-white/5 bg-white/[0.02] text-xs font-semibold tracking-wide text-gray-400 whitespace-nowrap">
+          <span>{date.toLocaleDateString(undefined, dateOptions)}</span>
+          <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0"></span>
+          <span>{date.toLocaleTimeString(undefined, timeOptions)}</span>
+        </div>
+      );
+    };
+
+    // --- Icons ---
+    const IconOrbits = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+      </svg>
+    );
+
+    const IconHexagon = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/><path d="M12 12 3.5 7.5"/><path d="M12 12l8.5-4.5"/></svg>
+    );
+
+    const IconCrystal = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L2 12l10 10 10-10L12 2z"/><path d="M12 2v20"/><path d="M2 12h20"/><path d="M12 2l4 10-4 10-4-10z"/>
+      </svg>
+    );
+
+    const IconPaw = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 13c-2 0-3.5 1.5-4 3-.5 1.5 0 3.5 2 4.5s4 1 5-1c1-2 .5-3.5 0-5s-2-1.5-3-1.5z" fill="currentColor" fillOpacity="0.2"/><circle cx="7.5" cy="8.5" r="2.5" fill="currentColor"/><circle cx="12" cy="5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="8.5" r="2.5" fill="currentColor"/>
+      </svg>
+    );
+
+    const Logo = () => (
+      <svg className="w-7 h-7 md:w-9 md:h-9 mr-2 md:mr-3 flex-shrink-0 group-hover:rotate-12 transition-transform duration-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 22V12" stroke="#aaaaaa" strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 12L21 7" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 12L3 7" stroke="#aaaaaa" strokeWidth="1.5" strokeLinejoin="round"/>
+      </svg>
+    );
+
+    const IconCheckCircle = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    );
+
+    // --- Curriculum Database ---
+    const db = {
+      "Physical Chemistry": {
+        theme: "text-cyan-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(34,211,238,0.1)]", borderGlow: "group-hover:border-cyan-400/40", icon: IconOrbits,
+        chapters: {
+          "Solutions": [
+            { id: "L1", title: "Introduction", videoId: "y9fMpqNsHD8" },
+            { id: "L2", title: "Concentration Terms Part 1", videoId: "P443rt3GPzw" },
+            { id: "L3", title: "Concentration Terms Part 2", videoId: "P-3xoDAqszk" },
+            { id: "L4", title: "Concentration Terms Part 3", videoId: "QadfSlDnYJY" },
+            { id: "L5", title: "Normality", videoId: "x8Q8o7pJNoQ" },
+            { id: "L6", title: "Solubility", videoId: "dxy8-giYz88" },
+            { id: "L7", title: "Henry's Law", videoId: "UZwHMP9K-qY" },
+            { id: "L8", title: "Vapour Pressure", videoId: "cKb2qxtBj9U" },
+            { id: "L9", title: "Raoult's Law", videoId: "C7qeI0esYuI" },
+          ],
+        }
+      },
+      "Organic Chemistry": {
+        theme: "text-emerald-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(52,211,153,0.1)]", borderGlow: "group-hover:border-emerald-400/40", icon: IconHexagon,
+        chapters: {
+          "Haloalkanes": [
+            { id: "L1", title: "Nomenclature & Preparation", videoId: "O82X_v6X5gU" },
+            { id: "L2", title: "SN1 & SN2 Reactions", videoId: "m_C6z_Z17oM" }
+          ]
+        }
+      },
+      "Inorganic Chemistry": {
+        theme: "text-violet-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(167,139,250,0.1)]", borderGlow: "group-hover:border-violet-400/40", icon: IconCrystal,
+        chapters: {
+          "d & f Block": [
+            { id: "L1", title: "Properties of Transition Metals", videoId: "G-rT_hA6U_k" }
+          ]
+        }
+      },
+      "Zoology": {
+        theme: "text-rose-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(251,113,133,0.1)]", borderGlow: "group-hover:border-rose-400/40", icon: IconPaw,
+        chapters: {
+          "Human Reproduction": [
+            { id: "L1", title: "Introduction", videoId: "ZNK8CrW3c1c" } ,
+            { id: "L2", title: "Male Reproductive System Part 1", videoId: "Vqyu5YjjLVM" },
+            { id: "L3", title: "Male Reproductive System Part 2", videoId: "btD7qNZ6aUs" },
+            { id: "L4", title: "Male Reproductive System Part 3", videoId: "rwwD_lkAhUc" },
+            { id: "L5", title: "Spermatogenesis", videoId: "C-T7Xm5eWew" },
+            { id: "L6", title: "Hormonal Control And Sperm Structure", videoId: "5hShzW-VcGY" },
+          ],
+        }
+      }
+    };
+
+    function App() {
+      const [subject, setSubject] = useState(null);
+      const [expandedChapter, setExpandedChapter] = useState(null);
+      const [currentLecture, setCurrentLecture] = useState(null);
+      
+      // NEW STATE: Tracks if the user actually hit the Launch button
+      const [lectureLaunched, setLectureLaunched] = useState(false); 
+      const [watchedData, setWatchedData] = useState({});
+      const playerRef = useRef(null);
+
+      // Load Watched Data on Mount
+      useEffect(() => {
+        const saved = localStorage.getItem('sfStudiesWatched');
+        if (saved) {
+          setWatchedData(JSON.parse(saved));
+        }
+      }, []);
+
+      // --- Auto-Watch Timer Engine (FIXED) ---
+      useEffect(() => {
+        let timer;
+        // ONLY start the timer if they actually launched the video!
+        if (currentLecture && subject && lectureLaunched) {
+          const uniqueKey = `${subject}-${currentLecture.chapter}-${currentLecture.id}`;
+          
+          if (!watchedData[uniqueKey]) {
+            timer = setTimeout(() => {
+              setWatchedData(prev => {
+                const newData = { ...prev, [uniqueKey]: true };
+                localStorage.setItem('sfStudiesWatched', JSON.stringify(newData));
+                return newData;
+              });
+            }, AUTO_WATCH_MS);
+          }
+        }
+        return () => clearTimeout(timer);
+      }, [currentLecture, subject, watchedData, lectureLaunched]);
+
+      // Manual Toggle Watched Status
+      const toggleWatchedStatus = () => {
+        if (!currentLecture || !subject) return;
+        const uniqueKey = `${subject}-${currentLecture.chapter}-${currentLecture.id}`;
+        
+        setWatchedData(prev => {
+          const newData = { ...prev, [uniqueKey]: !prev[uniqueKey] };
+          localStorage.setItem('sfStudiesWatched', JSON.stringify(newData));
+          return newData;
+        });
+      };
+
+      // Reset scroll on subject change
+      useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, [subject]);
+
+      const selectLecture = (lec, chapName) => {
+        setCurrentLecture({ ...lec, chapter: chapName });
+        setLectureLaunched(false); // Reset launch status on new selection
+        if (window.innerWidth < 1024 && playerRef.current) {
+          playerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+
+      const openSubject = (subjName) => {
+        setSubject(subjName);
+        setExpandedChapter(null);
+        setCurrentLecture(null);
+        setLectureLaunched(false);
+      };
+
+      // --- DEEP LINKING ENGINE (FIXED FOR WINDOWS & OVERFLOWS) ---
+      const handleAppLaunch = (e, videoId) => {
+        setLectureLaunched(true); // User officially clicked launch! The timer starts now.
+
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const webUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+        // Android
+        if (/android/i.test(userAgent)) {
+          e.preventDefault(); // Stop standard link behavior
+          window.location.href = `intent://watch?v=${videoId}#Intent;package=com.google.android.youtube;scheme=vnd.youtube;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+        } 
+        // iOS
+        else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+          e.preventDefault(); // Stop standard link behavior
+          window.location.href = `youtube://watch?v=${videoId}`;
+          setTimeout(() => { window.location.href = webUrl; }, 500);
+        }
+        // Desktop (Windows/Mac)
+        // We DO NOT call e.preventDefault() here.
+        // We let the native HTML <a> tag open the target="_blank".
+        // Chrome natively intercepts this and launches the Windows App automatically!
+      };
+
+      const isWatched = (lecId, chapName) => {
+        return watchedData[`${subject}-${chapName}-${lecId}`] === true;
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* TOP NAV - Overflows Fixed */}
+          <nav className="glass-panel sticky top-0 z-50 px-4 md:px-8 py-3 md:py-4 flex flex-wrap justify-between items-center border-b border-borderLight bg-bgDark/60 gap-3">
+            <div className="flex items-center cursor-pointer group min-w-0" onClick={() => openSubject(null)}>
+              <Logo />
+              <h1 className="font-bold text-lg md:text-2xl tracking-[0.1em] md:tracking-[0.25em] uppercase text-white truncate">
+                SF STUDIES
+              </h1>
+            </div>
+            
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+              <DateTimeDisplay />
+              <div className="flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 rounded-full bg-white/5 text-[10px] md:text-xs font-bold tracking-widest text-gray-300 uppercase whitespace-nowrap">
+                <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                Class 12
+              </div>
+            </div>
+          </nav>
+
+          <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            {!subject && (
+              <div className="mt-8 md:mt-24">
+                <div className="text-center mb-12 md:mb-16 animate-fade-in opacity-0 px-2 md:px-4">
+                  <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold mb-4 md:mb-5 tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">
+                    Select a Subject.
+                  </h2>
+                  <p className="text-gray-400 text-sm md:text-lg max-w-2xl mx-auto font-medium px-4">
+                    Access high-fidelity video lectures and comprehensive chapter breakdowns.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  {Object.entries(db).map(([name, data], index) => {
+                    const Icon = data.icon;
+                    return (
+                      <div 
+                        key={name} 
+                        onClick={() => openSubject(name)}
+                        className={`glass-panel group rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center gap-6 md:gap-8 cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:bg-glassHover ${data.bgGlow} ${data.borderGlow} animate-fade-in opacity-0`}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div className="p-4 md:p-5 rounded-2xl bg-white/5 group-hover:bg-white/10 transition-colors duration-500 floating-icon">
+                          <Icon className={`w-10 h-10 md:w-12 md:h-12 ${data.theme} transition-colors duration-500`} />
+                        </div>
+                        <h3 className="text-lg md:text-xl font-bold text-gray-200 group-hover:text-white transition-colors text-center tracking-wide">
+                          {name}
+                        </h3>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {subject && (
+              <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8 lg:h-[calc(100vh-140px)] animate-fade-in opacity-0">
+                
+                {/* SIDEBAR - Width Adjusted to prevent squishing */}
+                <div className="glass-panel w-full lg:w-[380px] flex-shrink-0 rounded-[1.5rem] md:rounded-3xl p-5 md:p-6 flex flex-col relative h-auto lg:h-full overflow-y-auto no-scrollbar">
+                  <button 
+                    onClick={() => openSubject(null)}
+                    className="group flex items-center gap-2 text-xs md:text-sm text-gray-400 hover:text-white mb-6 md:mb-8 transition-colors w-fit uppercase tracking-wider font-bold"
+                  >
+                    <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Subjects
+                  </button>
+                  
+                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pb-4 md:pb-6 border-b border-white/5">
+                    <div className="p-2.5 md:p-3 rounded-xl bg-white/5 flex-shrink-0">
+                      {React.createElement(db[subject].icon, { className: `w-6 h-6 md:w-8 md:h-8 ${db[subject].theme}` })}
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight truncate">{subject}</h2>
+                  </div>
+
+                  <div className="space-y-3 md:space-y-4 pb-4">
+                    {Object.entries(db[subject].chapters).map(([chapName, lectures]) => {
+                      const isExpanded = expandedChapter === chapName;
+                      return (
+                        <div key={chapName} className="rounded-xl md:rounded-2xl border border-white/5 bg-white/[0.01] overflow-hidden transition-all duration-500">
+                          <button 
+                            onClick={() => setExpandedChapter(isExpanded ? null : chapName)}
+                            className="w-full flex items-center justify-between p-4 md:p-5 text-left hover:bg-white/[0.04] transition-colors"
+                          >
+                            <span className="font-semibold text-sm md:text-base text-gray-200 pr-2">{chapName}</span>
+                            <div className={`w-5 h-5 md:w-6 md:h-6 flex-shrink-0 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-white/10' : ''}`}>
+                              <svg className="w-3 h-3 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                          </button>
+                          
+                          <div className={`overflow-hidden transition-all duration-500 ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="p-2 md:p-3 pt-0 space-y-1">
+                              {lectures.map((lec) => {
+                                const isActive = currentLecture?.id === lec.id && currentLecture?.chapter === chapName;
+                                const lecWatched = isWatched(lec.id, chapName);
+                                
+                                return (
+                                  <button 
+                                    key={lec.id}
+                                    onClick={() => selectLecture(lec, chapName)}
+                                    className={`w-full text-left p-3 md:p-4 rounded-lg md:rounded-xl text-xs md:text-sm transition-all flex items-center gap-3 md:gap-4 ${
+                                      isActive 
+                                      ? 'bg-white/10 text-white font-bold shadow-lg' 
+                                      : 'text-gray-400 hover:bg-white/5 hover:text-gray-100 font-medium'
+                                    }`}
+                                  >
+                                    {lecWatched ? (
+                                      <IconCheckCircle className={`w-4 h-4 flex-shrink-0 text-emerald-400 ${isActive ? 'drop-shadow-[0_0_5px_rgba(52,211,153,0.8)]' : ''}`} />
+                                    ) : (
+                                      <div className={`w-2 h-2 flex-shrink-0 rounded-full ml-1 ${isActive ? 'bg-white shadow-[0_0_8px_white]' : 'bg-gray-700'}`}></div>
+                                    )}
+                                    <span className={`truncate ${lecWatched && !isActive ? 'text-gray-500' : ''}`}>{lec.title}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* LAUNCH PAD */}
+                <div ref={playerRef} className="flex-1 flex flex-col relative pt-4 lg:pt-0 scroll-mt-24 min-w-0">
+                  {currentLecture ? (
+                    <div className="animate-fade-in opacity-0 h-[400px] md:h-[450px] lg:h-full glass-panel rounded-[1.5rem] md:rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/10 shadow-2xl">
+                      
+                      <div className={`absolute inset-0 opacity-10 ${db[subject].theme.replace('text-', 'bg-')}`}></div>
+                      
+                      <div className="z-10 flex flex-col items-center w-full max-w-2xl px-4">
+                        <span className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 ${db[subject].theme} break-words text-center`}>
+                          {currentLecture.chapter}
+                        </span>
+                        
+                        <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-white mb-8 md:mb-10 tracking-tight leading-snug md:leading-tight">
+                          {currentLecture.title}
+                        </h2>
+                        
+                        {/* THE LAUNCH BUTTON - FIXED TO PROPER <a> TAG */}
+                        <a 
+                          href={`https://www.youtube.com/watch?v=${currentLecture.videoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => handleAppLaunch(e, currentLecture.videoId)}
+                          className="group relative flex items-center justify-center gap-2 md:gap-3 px-6 md:px-8 py-4 md:py-5 rounded-2xl bg-[#FF0000] hover:bg-[#e60000] text-white font-bold text-base md:text-xl transition-all duration-300 shadow-[0_0_40px_rgba(255,0,0,0.3)] hover:shadow-[0_0_60px_rgba(255,0,0,0.5)] hover:-translate-y-1 w-full max-w-sm"
+                        >
+                          <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform duration-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                          Launch Lecture
+                        </a>
+                        
+                        <p className="mt-4 mb-6 md:mb-8 text-gray-400 text-xs md:text-sm font-medium flex items-center gap-1.5 md:gap-2">
+                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                          Opens securely via YouTube App
+                        </p>
+
+                        <div className="mt-auto border-t border-white/10 w-full pt-4 md:pt-6 flex justify-center">
+                          <button 
+                            onClick={toggleWatchedStatus}
+                            className={`flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-xl border font-semibold text-xs md:text-sm transition-all duration-300 w-full md:w-auto ${
+                              isWatched(currentLecture.id, currentLecture.chapter) 
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' 
+                              : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                            }`}
+                          >
+                            <IconCheckCircle className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                            {isWatched(currentLecture.id, currentLecture.chapter) ? 'Completed (Click to undo)' : 'Mark as Watched'}
+                          </button>
+                        </div>
+
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="glass-panel h-[300px] lg:h-full rounded-[1.5rem] md:rounded-3xl flex flex-col items-center justify-center text-gray-500 p-6 md:p-8 text-center border-dashed border-2 border-white/5">
+                      <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-white/5 flex items-center justify-center mb-4 md:mb-6 border border-white/5 relative">
+                        <div className="absolute inset-0 rounded-full border border-white/10 animate-ping opacity-20"></div>
+                        <svg className="w-6 h-6 md:w-10 md:h-10 ml-1 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                      <h3 className="text-lg md:text-2xl font-bold text-gray-200 mb-2 tracking-tight">Ready to Learn</h3>
+                      <p className="max-w-[250px] md:max-w-xs text-xs md:text-base text-gray-500 font-medium">
+                        Select a lecture from the curriculum to reveal the launch controls.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
