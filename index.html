@@ -90,7 +90,6 @@
 
     // =========================================================================
     // ⏳ TIMER SETTING
-    // 5000 = 5 seconds (Testing) | 1800000 = 30 minutes (Production)
     // =========================================================================
     const AUTO_WATCH_MS = 1800000; 
 
@@ -153,7 +152,7 @@
     // --- Curriculum Database ---
     const db = {
       "Physical Chemistry": {
-        theme: "text-cyan-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(34,211,238,0.1)]", borderGlow: "group-hover:border-cyan-400/40", icon: IconOrbits,
+        theme: "text-cyan-400", hex: "#22d3ee", bgGlow: "group-hover:shadow-[0_0_40px_rgba(34,211,238,0.1)]", borderGlow: "group-hover:border-cyan-400/40", icon: IconOrbits,
         chapters: {
           "Solutions": [
             { id: "L1", title: "Introduction", videoId: "y9fMpqNsHD8" },
@@ -174,7 +173,7 @@
         }
       },
       "Organic Chemistry": {
-        theme: "text-emerald-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(52,211,153,0.1)]", borderGlow: "group-hover:border-emerald-400/40", icon: IconHexagon,
+        theme: "text-emerald-400", hex: "#34d399", bgGlow: "group-hover:shadow-[0_0_40px_rgba(52,211,153,0.1)]", borderGlow: "group-hover:border-emerald-400/40", icon: IconHexagon,
         chapters: {
           "Haloalkanes": [
             { id: "L1", title: "Nomenclature & Preparation", videoId: "O82X_v6X5gU" },
@@ -183,7 +182,7 @@
         }
       },
       "Inorganic Chemistry": {
-        theme: "text-violet-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(167,139,250,0.1)]", borderGlow: "group-hover:border-violet-400/40", icon: IconCrystal,
+        theme: "text-violet-400", hex: "#a78bfa", bgGlow: "group-hover:shadow-[0_0_40px_rgba(167,139,250,0.1)]", borderGlow: "group-hover:border-violet-400/40", icon: IconCrystal,
         chapters: {
           "d & f Block": [
             { id: "L1", title: "Properties of Transition Metals", videoId: "G-rT_hA6U_k" }
@@ -191,7 +190,7 @@
         }
       },
       "Zoology": {
-        theme: "text-rose-400", bgGlow: "group-hover:shadow-[0_0_40px_rgba(251,113,133,0.1)]", borderGlow: "group-hover:border-rose-400/40", icon: IconPaw,
+        theme: "text-rose-400", hex: "#fb7185", bgGlow: "group-hover:shadow-[0_0_40px_rgba(251,113,133,0.1)]", borderGlow: "group-hover:border-rose-400/40", icon: IconPaw,
         chapters: {
           "Human Reproduction": [
             { id: "L1", title: "Introduction", videoId: "ZNK8CrW3c1c" } ,
@@ -211,26 +210,20 @@
       const [expandedChapter, setExpandedChapter] = useState(null);
       const [currentLecture, setCurrentLecture] = useState(null);
       
-      // NEW STATE: Tracks if the user actually hit the Launch button
+      const [showEmbedPlayer, setShowEmbedPlayer] = useState(false);
       const [lectureLaunched, setLectureLaunched] = useState(false); 
       const [watchedData, setWatchedData] = useState({});
       const playerRef = useRef(null);
 
-      // Load Watched Data on Mount
       useEffect(() => {
         const saved = localStorage.getItem('sfStudiesWatched');
-        if (saved) {
-          setWatchedData(JSON.parse(saved));
-        }
+        if (saved) setWatchedData(JSON.parse(saved));
       }, []);
 
-      // --- Auto-Watch Timer Engine (FIXED) ---
       useEffect(() => {
         let timer;
-        // ONLY start the timer if they actually launched the video!
         if (currentLecture && subject && lectureLaunched) {
           const uniqueKey = `${subject}-${currentLecture.chapter}-${currentLecture.id}`;
-          
           if (!watchedData[uniqueKey]) {
             timer = setTimeout(() => {
               setWatchedData(prev => {
@@ -244,11 +237,9 @@
         return () => clearTimeout(timer);
       }, [currentLecture, subject, watchedData, lectureLaunched]);
 
-      // Manual Toggle Watched Status
       const toggleWatchedStatus = () => {
         if (!currentLecture || !subject) return;
         const uniqueKey = `${subject}-${currentLecture.chapter}-${currentLecture.id}`;
-        
         setWatchedData(prev => {
           const newData = { ...prev, [uniqueKey]: !prev[uniqueKey] };
           localStorage.setItem('sfStudiesWatched', JSON.stringify(newData));
@@ -256,14 +247,14 @@
         });
       };
 
-      // Reset scroll on subject change
       useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, [subject]);
 
       const selectLecture = (lec, chapName) => {
         setCurrentLecture({ ...lec, chapter: chapName });
-        setLectureLaunched(false); // Reset launch status on new selection
+        setShowEmbedPlayer(false);
+        setLectureLaunched(false); 
         if (window.innerWidth < 1024 && playerRef.current) {
           playerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -273,40 +264,29 @@
         setSubject(subjName);
         setExpandedChapter(null);
         setCurrentLecture(null);
+        setShowEmbedPlayer(false);
         setLectureLaunched(false);
       };
 
-      // --- DEEP LINKING ENGINE (FIXED FOR WINDOWS & OVERFLOWS) ---
       const handleAppLaunch = (e, videoId) => {
-        setLectureLaunched(true); // User officially clicked launch! The timer starts now.
-
+        setLectureLaunched(true); 
         const userAgent = navigator.userAgent || navigator.vendor || window.opera;
         const webUrl = `https://www.youtube.com/watch?v=${videoId}`;
-
-        // Android
         if (/android/i.test(userAgent)) {
-          e.preventDefault(); // Stop standard link behavior
+          e.preventDefault(); 
           window.location.href = `intent://watch?v=${videoId}#Intent;package=com.google.android.youtube;scheme=vnd.youtube;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-        } 
-        // iOS
-        else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-          e.preventDefault(); // Stop standard link behavior
+        } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+          e.preventDefault(); 
           window.location.href = `youtube://watch?v=${videoId}`;
           setTimeout(() => { window.location.href = webUrl; }, 500);
         }
-        // Desktop (Windows/Mac)
-        // We DO NOT call e.preventDefault() here.
-        // We let the native HTML <a> tag open the target="_blank".
-        // Chrome natively intercepts this and launches the Windows App automatically!
       };
 
-      const isWatched = (lecId, chapName) => {
-        return watchedData[`${subject}-${chapName}-${lecId}`] === true;
-      };
+      const isWatched = (lecId, chapName) => watchedData[`${subject}-${chapName}-${lecId}`] === true;
 
       return (
         <div className="min-h-screen flex flex-col">
-          {/* TOP NAV - Overflows Fixed */}
+          {/* TOP NAV */}
           <nav className="glass-panel sticky top-0 z-50 px-4 md:px-8 py-3 md:py-4 flex flex-wrap justify-between items-center border-b border-borderLight bg-bgDark/60 gap-3">
             <div className="flex items-center cursor-pointer group min-w-0" onClick={() => openSubject(null)}>
               <Logo />
@@ -362,7 +342,7 @@
             {subject && (
               <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8 lg:h-[calc(100vh-140px)] animate-fade-in opacity-0">
                 
-                {/* SIDEBAR - Width Adjusted to prevent squishing */}
+                {/* SIDEBAR */}
                 <div className="glass-panel w-full lg:w-[380px] flex-shrink-0 rounded-[1.5rem] md:rounded-3xl p-5 md:p-6 flex flex-col relative h-auto lg:h-full overflow-y-auto no-scrollbar">
                   <button 
                     onClick={() => openSubject(null)}
@@ -430,51 +410,78 @@
                 {/* LAUNCH PAD */}
                 <div ref={playerRef} className="flex-1 flex flex-col relative pt-4 lg:pt-0 scroll-mt-24 min-w-0">
                   {currentLecture ? (
-                    <div className="animate-fade-in opacity-0 h-[400px] md:h-[450px] lg:h-full glass-panel rounded-[1.5rem] md:rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/10 shadow-2xl">
+                    <div className="animate-fade-in opacity-0 glass-panel rounded-[1.5rem] md:rounded-3xl p-4 md:p-6 flex flex-col relative overflow-hidden border border-white/10 shadow-2xl w-full">
                       
-                      <div className={`absolute inset-0 opacity-10 ${db[subject].theme.replace('text-', 'bg-')}`}></div>
+                      <div className={`absolute inset-0 opacity-[0.03] ${db[subject].theme.replace('text-', 'bg-')} pointer-events-none`}></div>
                       
-                      <div className="z-10 flex flex-col items-center w-full max-w-2xl px-4">
-                        <span className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 ${db[subject].theme} break-words text-center`}>
+                      <div className="z-10 mb-4 md:mb-6 px-1">
+                        <span className={`inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-2 ${db[subject].theme}`}>
                           {currentLecture.chapter}
                         </span>
-                        
-                        <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-white mb-8 md:mb-10 tracking-tight leading-snug md:leading-tight">
+                        <h2 className="text-xl md:text-3xl font-extrabold text-white tracking-tight leading-snug">
                           {currentLecture.title}
                         </h2>
-                        
-                        {/* THE LAUNCH BUTTON - FIXED TO PROPER <a> TAG */}
+                      </div>
+
+                      {/* Video Player & Cover Area */}
+                      <div className="z-10 w-full relative rounded-xl md:rounded-2xl overflow-hidden bg-bgDark border border-white/10 shadow-2xl transition-all duration-500" style={{ paddingTop: '56.25%' }}>
+                        {!showEmbedPlayer ? (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center cursor-pointer group overflow-hidden"
+                            onClick={() => setShowEmbedPlayer(true)}
+                          >
+                            {/* Native YouTube Thumbnail Background */}
+                            <div 
+                              className="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-30 transition-opacity duration-700 blur-[2px] group-hover:blur-0 scale-105"
+                              style={{ backgroundImage: `url(https://img.youtube.com/vi/${currentLecture.videoId}/maxresdefault.jpg)` }}
+                            ></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-bgDark/90 via-transparent to-bgDark/40"></div>
+
+                            {/* Premium Glass Play Button */}
+                            <div className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full glass-panel flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-white/10 shadow-2xl z-10 border border-white/10 ${db[subject].theme}`} style={{ boxShadow: `0 0 40px ${db[subject].hex}20` }}>
+                               <div className="absolute inset-0 rounded-full border border-currentColor animate-ping opacity-20"></div>
+                               <svg className="w-8 h-8 md:w-10 md:h-10 ml-1.5 md:ml-2 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                          </div>
+                        ) : (
+                          <iframe 
+                            className="absolute top-0 left-0 w-full h-full animate-fade-in"
+                            src={`https://www.youtube.com/embed/${currentLecture.videoId}?rel=0&modestbranding=1&autoplay=1`}
+                            title={currentLecture.title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            onLoad={() => setLectureLaunched(true)}
+                          ></iframe>
+                        )}
+                      </div>
+
+                      {/* Action Controls */}
+                      <div className="z-10 mt-4 md:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-1">
+                        <button 
+                          onClick={toggleWatchedStatus}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3.5 md:px-6 md:py-3.5 rounded-xl border font-semibold text-xs md:text-sm transition-all duration-300 w-full sm:w-auto ${
+                            isWatched(currentLecture.id, currentLecture.chapter) 
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' 
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <IconCheckCircle className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                          {isWatched(currentLecture.id, currentLecture.chapter) ? 'Completed (Undo)' : 'Mark as Watched'}
+                        </button>
+
                         <a 
                           href={`https://www.youtube.com/watch?v=${currentLecture.videoId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => handleAppLaunch(e, currentLecture.videoId)}
-                          className="group relative flex items-center justify-center gap-2 md:gap-3 px-6 md:px-8 py-4 md:py-5 rounded-2xl bg-[#FF0000] hover:bg-[#e60000] text-white font-bold text-base md:text-xl transition-all duration-300 shadow-[0_0_40px_rgba(255,0,0,0.3)] hover:shadow-[0_0_60px_rgba(255,0,0,0.5)] hover:-translate-y-1 w-full max-w-sm"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 md:px-8 md:py-3.5 rounded-xl bg-[#FF0000] hover:bg-[#e60000] text-white font-bold text-xs md:text-sm transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.25)] hover:shadow-[0_0_40px_rgba(255,0,0,0.4)] hover:-translate-y-0.5 w-full sm:w-auto"
                         >
-                          <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform duration-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                          Launch Lecture
+                          <svg className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                          Watch in App
                         </a>
-                        
-                        <p className="mt-4 mb-6 md:mb-8 text-gray-400 text-xs md:text-sm font-medium flex items-center gap-1.5 md:gap-2">
-                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                          Opens securely via YouTube App
-                        </p>
-
-                        <div className="mt-auto border-t border-white/10 w-full pt-4 md:pt-6 flex justify-center">
-                          <button 
-                            onClick={toggleWatchedStatus}
-                            className={`flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-xl border font-semibold text-xs md:text-sm transition-all duration-300 w-full md:w-auto ${
-                              isWatched(currentLecture.id, currentLecture.chapter) 
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' 
-                              : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                            }`}
-                          >
-                            <IconCheckCircle className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                            {isWatched(currentLecture.id, currentLecture.chapter) ? 'Completed (Click to undo)' : 'Mark as Watched'}
-                          </button>
-                        </div>
-
                       </div>
+
                     </div>
                   ) : (
                     <div className="glass-panel h-[300px] lg:h-full rounded-[1.5rem] md:rounded-3xl flex flex-col items-center justify-center text-gray-500 p-6 md:p-8 text-center border-dashed border-2 border-white/5">
@@ -486,7 +493,7 @@
                       </div>
                       <h3 className="text-lg md:text-2xl font-bold text-gray-200 mb-2 tracking-tight">Ready to Learn</h3>
                       <p className="max-w-[250px] md:max-w-xs text-xs md:text-base text-gray-500 font-medium">
-                        Select a lecture from the curriculum to reveal the launch controls.
+                        Select a lecture from the curriculum to reveal get started.
                       </p>
                     </div>
                   )}
